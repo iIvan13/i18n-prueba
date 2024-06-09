@@ -1,0 +1,157 @@
+---
+import { getI18N } from "@/i18n";
+import { getCollection } from "astro:content";
+import FormattedDate from "@/components/FormattedDate.astro";
+import { parseStringPromise } from "xml2js";
+
+const { currentLocale } = Astro;
+const i18n = getI18N({ currentLocale });
+
+// blog
+const NUMBER_LAST_POSTS = 4;
+
+const posts = (await getCollection("blog"))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, NUMBER_LAST_POSTS);
+
+// youtube videos
+const ID_CHANNEL_PRIMARY = "UCKMWXwHYoy920OFEN_BM5VQ";
+const ID_CHANNEL_SECONDARY = "UCRC7LM5vAZMxS8LSo0PKZng";
+const NUMBER_LAST_YT_VIDEOS = 3;
+
+const feedUrl = (id: string) =>
+  `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
+
+async function loadFeed(feedUrl: string) {
+  const response = await fetch(feedUrl);
+  const xmlData = await response.text();
+  const jsonData = await parseStringPromise(xmlData);
+  return jsonData.feed.entry
+    .map((entry: any) => ({
+      title: entry.title[0],
+      link: entry.link[0].$.href,
+      // published: entry.published[0],
+    }))
+    .slice(0, NUMBER_LAST_YT_VIDEOS);
+}
+
+// TODO: use types
+const videosYoutubePrimary = await loadFeed(feedUrl(ID_CHANNEL_PRIMARY)) as any;
+const videosYoutubeSecondary = await loadFeed(feedUrl(ID_CHANNEL_SECONDARY)) as any;
+---
+
+<main>
+  <section>
+    <h1>Eber Lopez</h1>
+    <img
+      src="/images/profile.webp"
+      width="120"
+      alt="Foto de perfil"
+      style="border-radius: 100%;"
+    />
+    <p>{i18n.HOME.SHORT_DESCRIPTION}</p>
+    <ul>
+      <li>
+        GitHub:
+        <a href="http://github.com/doneber" target="_blank">/doneber</a>
+      </li>
+      <li>
+        YouTube:
+        <ul>
+          <li>
+            <a href="http://youtube.com/@doneber" target="_blank"
+              >404 Not Found</a
+            >
+          </li>
+          <li>
+            <a href="http://youtube.com/@donebercode" target="_blank"
+              >Otro canal de programación más</a
+            >
+          </li>
+        </ul>
+      </li>
+      <li>
+        TikTok:
+        <ul>
+          <li>
+            <a href="http://tiktok.com/@doneberdev" target="_blank"
+              >@doneberdev</a
+            >
+          </li>
+          <li>
+            <a href="http://tiktok.com/@donebercode" target="_blank"
+              >@donebercode</a
+            >
+          </li>
+        </ul>
+      </li>
+      <li>
+        Twitter:
+        <a href="http://twitter.com/@doneberdev" target="_blank">@doneberdev</a>
+      </li>
+      <li>
+        Instagram:
+        <a href="http://instagram.com/doneberdev" target="_blank">/doneberdev</a
+        >
+      </li>
+    </ul>
+  </section>
+  <section>
+    <h2>{i18n.HOME.BLOG_TITLE}</h2>
+    <ul>
+      {
+        posts.map((post) => (
+          <li>
+            <a href={`/blog/${post.slug}/`}>{post.data.title}</a>
+            - <FormattedDate date={post.data.pubDate} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+  <section>
+    <h2>{i18n.HOME.VIDEOS_TITLE}</h2>
+    <h3>Canal primario</h3>
+    <ul>
+      {
+        videosYoutubePrimary.map((video: any, index: number) => (
+          <li>
+            <a href={video.link} target="_blank" rel="noopener noreferrer">
+              {video.title}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <h3>Canal secundario</h3>
+    <ul>
+      {
+        videosYoutubeSecondary.map((video: any, index: number) => (
+          <li>
+            <a href={video.link} target="_blank" rel="noopener noreferrer">
+              {video.title}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+  <section>
+    <h2>{i18n.HOME.COMMUNITY_TITLE}</h2>
+    <ul>
+      <li>
+        Discord: <a href="https://discord.com/invite/5ak7sZpC4t"
+          >Servidor de Discord</a
+        >
+      </li>
+    </ul>
+  </section>
+  <section>
+    <h2>{i18n.HOME.CONTACT_TITLE}</h2>
+    <p>
+      <a href="mailto:contact@doneber.dev" target="_blank"
+        >contact@doneber.dev</a
+      >
+    </p>
+  </section>
+</main>
